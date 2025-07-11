@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LWK Free Movies</title>
+  <style>
+    :root{
+      --primary:#1f1f1f;
+      --accent:#e50914;
+      --bg:#121212;
+      --text:#ffffff;
+      --card-bg:#242424;
+      --radius:12px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;}
+    body{background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+    header{background:var(--primary);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+    header h1{font-size:1.5rem;font-weight:700;}
+    nav a{margin-left:1rem;color:var(--text);text-decoration:none;transition:opacity .2s}
+    nav a:hover{opacity:.7}
+    main{flex:1;padding:2rem;max-width:1200px;margin:0 auto;}
+    #searchBar{display:flex;margin-bottom:2rem}
+    #searchInput{flex:1;padding:.6rem 1rem;border:none;border-radius:var(--radius) 0 0 var(--radius)}
+    #searchBtn{background:var(--accent);border:none;color:#fff;padding:.6rem 1rem;border-radius:0 var(--radius) var(--radius) 0;cursor:pointer}
+    #movies{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1.5rem}
+    .card{background:var(--card-bg);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.5);transition:transform .2s}
+    .card:hover{transform:scale(1.05)}
+    .card img{width:100%;display:block}
+    .card .info{padding:.8rem}
+    .card .info h3{font-size:1rem;margin-bottom:.3rem}
+    .card .info span{font-size:.8rem;opacity:.7}
+    footer{background:var(--primary);padding:1rem 2rem;text-align:center;font-size:.8rem}
+    button, input{font-size:1rem}
+    .dialog{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.7);visibility:hidden;opacity:0;transition:opacity .2s}
+    .dialog.show{visibility:visible;opacity:1}
+    .dialog-content{background:var(--card-bg);padding:2rem;border-radius:var(--radius);max-width:600px;max-height:80vh;overflow-y:auto}
+    .dialog-content h2{margin-bottom:1rem;color:var(--accent)}
+    .close-btn{background:none;border:none;font-size:1.2rem;color:var(--text);position:absolute;top:1rem;right:1rem;cursor:pointer}
+  </style>
+</head>
+<body>
+<header>
+  <h1> Free Movies made BY KamranIsmail</h1>
+  <nav>
+    <a href="#" id="homeLink">Home</a>
+    <a href="#" id="popularLink">Popular</a>
+    <a href="#" id="settingsLink">Settings</a>
+  </nav>
+</header><main>
+  <div id="searchBar">
+    <input id="searchInput" type="text" placeholder="Search movies..."/>
+    <button id="searchBtn">Search</button>
+  </div>
+  <section id="movies"></section>
+</main><footer>
+  &copy; 2025 LWK Free Movies. All movie data & images © TMDB. App owner: Kamran Brohi. Contact: <a href="mailto:epossible34@gmail.com">epossible34@gmail.com</a>
+</footer><!-- Dialog --><div class="dialog" id="settingsDialog">
+  <div class="dialog-content">
+    <button class="close-btn" id="closeDialog">&times;</button>
+    <h2>Settings & Policies</h2>
+    <h3>Privacy Policy</h3>
+    <p>We respect your privacy. No personal data is collected or stored by this app. All movie data is fetched directly from <strong>The Movie Database (TMDB)</strong> via their public API.</p>
+    <h3>Terms of Service</h3>
+    <p>This app is provided for educational and personal entertainment purposes only. All movie metadata and images belong to TMDB and respective owners.&nbsp;We do not host or stream any video content. By using this app, you agree not to misuse or redistribute it.</p>
+    <h3>Contact</h3>
+    <p>For any queries or complaints, email us at <a href="mailto:epossible34@gmail.com">epossible34@gmail.com</a>.</p>
+  </div>
+</div><script>
+// == CONFIG ==
+const TMDB_API_KEY = '33c10c9ff10651aa1d623a0d15dae056';
+const IMG_BASE = 'https://image.tmdb.org/t/p/w500';
+
+// == DOM refs ==
+const moviesEl = document.getElementById('movies');
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const homeLink = document.getElementById('homeLink');
+const popularLink = document.getElementById('popularLink');
+const settingsLink = document.getElementById('settingsLink');
+const settingsDialog = document.getElementById('settingsDialog');
+const closeDialog = document.getElementById('closeDialog');
+
+// == Helpers ==
+async function fetchMovies(url){
+  try{
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.results;
+  }catch(e){
+    console.error('Fetch error',e);
+    return [];
+  }
+}
+
+function buildCard(movie){
+  const card = document.createElement('div');
+  card.className='card';
+  const img = document.createElement('img');
+  img.src = movie.poster_path ? IMG_BASE + movie.poster_path : 'https://via.placeholder.com/500x750?text=No+Image';
+  img.alt = movie.title;
+  const info = document.createElement('div');
+  info.className='info';
+  info.innerHTML = `<h3>${movie.title}</h3><span>⭐ ${movie.vote_average}</span>`;
+  card.appendChild(img);
+  card.appendChild(info);
+  card.addEventListener('click',()=>window.open(`https://www.themoviedb.org/movie/${movie.id}`,'_blank'));
+  return card;
+}
+
+function renderMovies(list){
+  moviesEl.innerHTML='';
+  if(!list.length){
+    moviesEl.innerHTML='<p>No movies found.</p>';
+    return;
+  }
+  list.forEach(m=>moviesEl.appendChild(buildCard(m)));
+}
+
+async function loadPopular(){
+  const url = `https://api.themoviedb.org/3/movie/popular?api_key=${TMDB_API_KEY}&language=en-US&page=1`;
+  const movies = await fetchMovies(url);
+  renderMovies(movies);
+}
+
+async function searchMovies(q){
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}`;
+  const movies = await fetchMovies(url);
+  renderMovies(movies);
+}
+
+// == Event Listeners ==
+searchBtn.addEventListener('click',()=>{ if(searchInput.value.trim()) searchMovies(searchInput.value.trim());});
+searchInput.addEventListener('keydown',e=>{ if(e.key==='Enter' && searchInput.value.trim()) searchMovies(searchInput.value.trim());});
+homeLink.addEventListener('click',e=>{e.preventDefault();loadPopular();});
+popularLink.addEventListener('click',e=>{e.preventDefault();loadPopular();});
+settingsLink.addEventListener('click',e=>{e.preventDefault();settingsDialog.classList.add('show');});
+closeDialog.addEventListener('click',()=>settingsDialog.classList.remove('show'));
+window.addEventListener('click',e=>{ if(e.target===settingsDialog) settingsDialog.classList.remove('show');});
+
+// == Init ==
+loadPopular();
+</script></body>
+</html>
